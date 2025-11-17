@@ -1,6 +1,9 @@
 # Power-Oriented-Inertia-Definition
 
-Simulation data and code for the paper titled: **"Definition and Formulation of Inertia Service Incorporating Inverter-Based Resources."**
+Simulation data and code for the paper titled:
+**"Definition and Formulation of Inertia Service Incorporating Inverter-Based Resources."**
+
+**Status:** Submitted to the IEEE Transactions on Power Systems for peer review.
 
 This repository contains the simulation code and data used to define and formalize inertia service incorporating inverter-based resources as presented in the paper.
 
@@ -44,4 +47,13 @@ The main modifications and core assumptions applied to the original IEEE 30-bus 
 ### 3. Detailed Assumptions and Parameters
 
 For **more detailed assumptions and data**, please refer to the separate file: **`ASSUMPTIONS.md`**.
+
+---
+
+## 🤝 Acknowledgements
+
+This research and the associated code repository would not have been possible without the invaluable guidance and contribution of my co-authors.
+
+I would like to express my deepest gratitude to **Prof. Ross Baldick** and **Prof. Hunyoung Shin** for their expert insight, supervision, and dedicated work on the paper, *"Definition and Formulation of Inertia Service Incorporating Inverter-Based Resources."* Their collaboration was essential to the successful completion of this project.
+
 
