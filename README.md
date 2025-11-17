@@ -37,6 +37,7 @@ The basic system data is obtained from the **MATPOWER package**, utilizing the *
 
 The main modifications and core assumptions applied to the original IEEE 30-bus system are as follows:
 
+* **Synchronous Inertia (SI) Level Adjustment:** The SI level was explicitly adjusted by modifying the **Inertia Constant ($H$) of the synchronous generators** to model **Low-SI** and **High-SI** grid scenarios.
 * **Inverter-Based Resource Addition:** One IBR unit was added to the system to model a virtual inertia provider.
 * **Demand and Cost Functions:** Load demand and the existing **generator cost functions** were kept **identical** to the MATPOWER base data.
 
