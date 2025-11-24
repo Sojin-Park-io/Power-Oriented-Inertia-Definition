@@ -15,7 +15,7 @@ This repository serves as an archive for the mathematical models and simulation 
 This repository provides the theoretical backbone and data parameters of the research:
 
 * **📄 Complete Formulation (PDF)**
-    * File: `Folmulation.pdf`
+    * File: **[`Formulation.pdf`}(./Formulation.pdf)**
     * Description: Contains the detailed mathematical derivations and optimization problem formulations proposed in the paper.
 
 * **📝 Simulation Data & Assumptions**
