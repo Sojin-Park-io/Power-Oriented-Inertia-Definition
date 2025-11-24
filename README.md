@@ -1,59 +1,63 @@
 # Power-Oriented-Inertia-Definition
 
-Simulation data and code for the paper titled:
-**"Definition and Formulation of Inertia Service Incorporating Inverter-Based Resources."**
+Supplementary material containing the complete mathematical formulation and simulation parameters for the paper:
 
-**Status:** Submitted to the IEEE Transactions on Power Systems for peer review.
+**"Definition and Formulation of Inertia Service Incorporating Inverter-Based Resources"**
 
-This repository contains the simulation code and data used to define and formalize inertia service incorporating inverter-based resources as presented in the paper.
+> **Status:** Submitted to the *IEEE Transactions on Power Systems* for peer review.
+
+This repository serves as an archive for the mathematical models and simulation assumptions used to define and formalize inertia services incorporating inverter-based resources (IBR), as presented in the research.
 
 ---
 
-## 🛠️ Development Environment and Requirements
+## 📂 Repository Contents
 
-The following setup was used to perform the simulations and solve the optimization problems presented in this research.
+This repository provides the theoretical backbone and data parameters of the research:
 
-### 💻 Hardware Specifications
+* **📄 Complete Formulation (PDF)**
+    * File: `Folmulation.pdf`
+    * Description: Contains the detailed mathematical derivations and optimization problem formulations proposed in the paper.
 
-All simulations were performed on a laptop computer with the following specifications:
+* **📝 Simulation Data & Assumptions**
+    * File: **[`ASSUMPTIONS.md`](./ASSUMPTIONS.md)**
+    * Description: Lists all specific simulation parameters, including grid modifications, generator constants, and cost function settings used to generate the results.
+
+---
+
+## ⚙️ Simulation Environment
+
+The simulation results and optimization solutions discussed in the paper (and the provided formulation) were generated using the following environment. This information is provided to clarify the computational context of the research.
+
+### 💻 Hardware
 * **CPU:** Apple M3 chip (4.05 GHz clock rate)
-* **RAM:** 16 GB
+* **RAM:** 16 GB Unified Memory
 
-### ⚙️ Software and Tools
-
-To run the code and solve the optimization problems, the following software and tools must be installed:
-
-* **Main Environment:** **Matlab (R2025a)**
-* **Base Dataset Source:** **MATPOWER**
-* **Optimization Modeling:** **YALMIP**
-* **Solver:** **Gurobi Optimizer 10.0.2**
+### 🛠️ Software & Solvers
+* **Main Environment:** MATLAB (R2025a)
+* **Modeling Framework:** YALMIP
+* **Solver:** Gurobi Optimizer 10.0.2
+* **Power System Data Source:** MATPOWER
 
 ---
 
-## 📊 Base System Data and Core Assumptions
+## 📊 Base System Overview
 
 ### 1. Base Dataset
+The study utilizes the **IEEE 30-bus system** dataset obtained from the **MATPOWER** package as the baseline.
 
-The basic system data is obtained from the **MATPOWER package**, utilizing the **IEEE 30-bus system** dataset.
+### 2. Key Modifications
+To analyze the impact of inertia services, the following modifications were applied to the standard IEEE 30-bus system:
 
-### 2. Core Assumptions
+* **Synchronous Inertia (SI) Scenarios:** The inertia constant ($H$) of synchronous generators was explicitly adjusted to model **Low-SI** and **High-SI** grid scenarios.
+* **IBR Integration:** A virtual inertia provider (IBR unit) was integrated into the system model.
+* **Parameters:** Load demand and generator cost functions remain **identical** to the original MATPOWER specifications.
 
-The main modifications and core assumptions applied to the original IEEE 30-bus system are as follows:
-
-* **Synchronous Inertia (SI) Level Adjustment:** The SI level was explicitly adjusted by modifying the **Inertia Constant ($H$) of the synchronous generators** to model **Low-SI** and **High-SI** grid scenarios.
-* **Inverter-Based Resource Addition:** One IBR unit was added to the system to model a virtual inertia provider.
-* **Demand and Cost Functions:** Load demand and the existing **generator cost functions** were kept **identical** to the MATPOWER base data.
-
-### 3. Detailed Assumptions and Parameters
-
-For **more detailed assumptions and data**, please refer to the separate file: **`ASSUMPTIONS.md`**.
+> **Note:** For the specific numerical values of these modifications (e.g., exact $H$ values, IBR capacity), please refer to the **[`ASSUMPTIONS.md`](./ASSUMPTIONS.md)** file.
 
 ---
 
 ## 🤝 Acknowledgements
 
-This research and the associated code repository would not have been possible without the invaluable guidance and contribution of my co-authors.
+This research and repository would not have been possible without the invaluable guidance and contribution of my co-authors.
 
 I would like to express my deepest gratitude to **Prof. Ross Baldick** and **Prof. Hunyoung Shin** for their expert insight, supervision, and dedicated work on the paper, *"Definition and Formulation of Inertia Service Incorporating Inverter-Based Resources."* Their collaboration was essential to the successful completion of this project.
-
-
