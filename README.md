@@ -18,9 +18,13 @@ This repository provides the theoretical backbone and data parameters of the res
     * File: **[`Formulation.pdf`](./Formulation.pdf)**
     * Description: Contains the detailed mathematical derivations and optimization problem formulations proposed in the paper.
 
-* **📝 Simulation Data & Assumptions**
-    * File: **[`ASSUMPTIONS.md`](./ASSUMPTIONS.md)**
-    * Description: Lists all specific simulation parameters, including grid modifications, generator constants, and cost function settings used to generate the results.
+* **📝 SCED Simulation Data & Assumptions**
+    * Files: **[`ASSUMPTIONS_IEEE30.md`](./SCED Simulation/ASSUMPTIONS_IEEE30.md)** for the IEEE 30-bus system, **[`ASSUMPTIONS_IEEE118.md`](./SCED Simulation/ASSUMPTIONS_IEEE118.md)** for the IEEE 118-bus system
+    * Description: Lists all specific simulation parameters, including grid modifications, generator characteristics, and cost function settings used to generate the results.
+
+* **📝 TDS Simulation Data & Assumptions**
+    * File: **[`ASSUMPTIONS.md`](./TDS Simulation/ASSUMPTIONS.md)** 
+    * Description: Lists all specific simulation parameters, including governor time constants and recovery behavior settings.
 
 ---
 
@@ -37,22 +41,6 @@ The simulation results and optimization solutions discussed in the paper (and th
 * **Modeling Framework:** YALMIP
 * **Solver:** Gurobi Optimizer 10.0.2
 * **Power System Data Source:** MATPOWER
-
----
-
-## 📊 Base System Overview
-
-### 1. Base Dataset
-The study utilizes the **IEEE 30-bus system** dataset obtained from the **MATPOWER** package as the baseline.
-
-### 2. Key Modifications
-To analyze the impact of inertia services, the following modifications were applied to the standard IEEE 30-bus system:
-
-* **Synchronous Inertia (SI) Scenarios:** The inertia constant ($H$) of synchronous generators was explicitly adjusted to model **Low-SI** and **High-SI** grid scenarios.
-* **IBR Integration:** A virtual inertia provider (IBR unit) was integrated into the system model.
-* **Parameters:** Load demand and generator cost functions remain **identical** to the original MATPOWER specifications.
-
-> **Note:** For the specific numerical values of these modifications (e.g., exact $H$ values, IBR capacity), please refer to the **[`ASSUMPTIONS.md`](./ASSUMPTIONS.md)** file.
 
 ---
 
