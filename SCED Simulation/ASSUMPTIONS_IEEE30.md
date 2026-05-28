@@ -27,7 +27,6 @@ One IBR unit, which incorporates an Energy Storage System (ESS), is added to the
 | **Round-Trip Efficiency ($\eta$)** | $0.9$ | - | - |
 | **Min State of Charge ($\text{SoC}_{\min}$)** | $0.2$ | p.u. | - |
 | **Max State of Charge ($\text{SoC}_{\max}$)** | $0.8$ | p.u. | - |
-| **Operational Restriction** | Discharge-only operation | - | - |
 | **Variable Energy Cost** | $3$ | \$/MWh | [1] |
 | **Inertia Constant ($H$) Range** | $0 - 50$ | s | [2] |
 
