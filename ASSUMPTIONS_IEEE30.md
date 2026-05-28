@@ -1,6 +1,6 @@
-## Detailed Assumptions and Parameter Adjustments
+## Detailed Assumptions for the IEEE 30-bus System and Parameter Adjustments
 
-This document provides a detailed breakdown of the adjustments made to the base IEEE 30-bus system data, particularly focusing on the parameters related to inertia, the Inverter-Based Resource (IBR), and operational constraints.
+This document provides a detailed breakdown of the adjustments made to the IEEE 30-bus system data, particularly focusing on the parameters related to inertia, the Inverter-Based Resource (IBR), and operational constraints.
 
 ---
 
