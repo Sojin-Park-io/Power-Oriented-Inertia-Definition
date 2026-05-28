@@ -23,7 +23,7 @@ This repository provides the theoretical backbone and data parameters of the res
     * Description: Lists all specific simulation parameters, including grid modifications, generator characteristics, and cost function settings used to generate the results.
 
 * **📝 TDS Simulation Data & Assumptions**
-    * File: **[`ASSUMPTIONS.md`](./TDS Simulation/ASSUMPTIONS.md)** 
+    * File: **[`ASSUMPTIONS.md`](./TDS%20Simulation/ASSUMPTIONS.md)** 
     * Description: Lists all specific simulation parameters, including governor time constants and recovery behavior settings.
 
 ---
