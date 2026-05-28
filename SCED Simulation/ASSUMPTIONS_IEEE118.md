@@ -29,11 +29,11 @@ Twelve IBR units, comprising two distinct types, are integrated into the system 
 | **Type B** | IBR 4–12 (9 units) | Energy + Inertia + PFR | $10 \text{s}$ | Available |
 
 * **Type A** units carry a large VI headroom ($H_{\text{max}} = 50 \text{s}$) in exchange for no PFR obligation, acting as dedicated inertia providers.
-* **Type B** units provide all ancillary services with a limited VI capability ($\(H_{\text{max}} = 10 \text{s}$)
+* **Type B** units provide all ancillary services with a limited VI capability ($\H_{\text{max}} = 10 \text{s}$)
 
 #### 2b. Common IBR Parameters
 
-The following parameters apply to **all 12 IBR units**:
+The following parameters apply to all 12 IBR units:
 
 | Parameter | Value | Unit | Reference |
 | :--- | :--- | :--- | :--- |
@@ -96,7 +96,7 @@ Two approaches to contingency modeling are compared, with $\alpha = 1.0$ and $\b
 | Case | Description |
 | :--- | :--- |
 | **Variable Contingency** | The largest contingency $\Delta P^{L}$ is a decision variable; SCED endogenously determines the binding contingency unit |
-| **Fixed Contingency** | $\Delta P^{L} = \max(P_{\max}) = 600 \text{MW}$ — imposes the worst-case contingency regardless of dispatch |
+| **Fixed Contingency** | $\Delta P^{L} = \max(\overline{P}) = 600 \text{MW}$ — imposes the worst-case contingency regardless of dispatch |
 
 #### 6b. $\alpha$/$\beta$ Sensitivity Analysis
 
