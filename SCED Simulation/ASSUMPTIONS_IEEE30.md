@@ -6,7 +6,7 @@ This document provides a detailed breakdown of the adjustments made to the IEEE 
 
 ### 1. Synchronous Inertia (SI) Level Adjustment
 
-The base system's synchronous inertia was explicitly modified to define the two primary grid scenarios discussed in the paper. This adjustment was achieved by setting the **Inertia Constant ($H$)** for the **six synchronous generators (SGs)**.
+The base system's synchronous inertia was explicitly modified to define the two primary grid scenarios discussed in the paper. This adjustment was achieved by setting the Inertia Constant ($H$) for the six synchronous generators (SGs).
 
 The two distinct SI levels are defined as follows:
 
@@ -19,7 +19,7 @@ The two distinct SI levels are defined as follows:
 
 ### 2. Inverter-Based Resource (IBR) Integration (Virtual Inertia Provider)
 
-One IBR unit, which **incorporates an Energy Storage System (ESS)**, is added to the system to model a virtual inertia provider. The IBR is assumed to be capable of providing **both positive and negative inertia responses** (like those achieved through VSG/VSM control). The detailed characteristics of the integrated ESS are as follows:
+One IBR unit, which incorporates an Energy Storage System (ESS), is added to the system to model a virtual inertia provider. The IBR is assumed to be capable of providing both positive and negative inertia responses (like those achieved through VSG/VSM control). The detailed characteristics of the integrated ESS are as follows:
 
 | Parameter | Value | Unit | Reference |
 | :--- | :--- | :--- | :--- |
@@ -39,11 +39,11 @@ The variable energy cost of \$3/MWh is applied to the IBR for both energy dispat
 
 The system operation is based on the Economic Dispatch (ED) problem following a prior UC solution where all generators are online.
 
-* **System Demand:** $189.2 \, \text{MW}$ (approx. 56% of total capacity).
+* **System Demand:** $189.2 \text{MW}$ (approx. 56% of total capacity).
 * **Droop Constant ($R$):** $5\%$ for all resources.
 * **Dispatch Interval ($\Delta T$):** $5$ minutes.
 * **Required Time for Fully-Activated PFR ($T^{\rm PFR}$):** $6$ seconds [3].
-* **Nominal Frequency ($f_0$):** $60 \, \text{Hz}$.
+* **Nominal Frequency ($f_0$):** $60 \text{Hz}$.
 
 ### 4. Frequency Constraint Limits
 
