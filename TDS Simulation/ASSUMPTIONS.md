@@ -115,3 +115,123 @@ The two footroom strategies compared are:
 
 When footroom is hit, the capped IBR's $M_j$ is excluded from the effective inertia, reducing effective absorption inertia and amplifying frequency overshoot.
 
+
+## Time-Domain Simulation (TDS) Algorithm
+
+### Overview
+
+The TDS integrates four coupled dynamical systems simultaneously via MATLAB's `ode45` (adaptive step-size Runge-Kutta):
+
+| State Variable | Description |
+| :--- | :--- |
+| $\Delta f(t)$ | COI frequency deviation |
+| $P_i^{\text{Gov}}(t)$ | SG governor output (per SG) |
+| $P_j^{\text{PFR}}(t)$ | IBR PFR output (per IBR) |
+| $E_j^{\text{soc}}(t)$ | IBR SoC (per IBR) |
+
+State vector dimension: $n_S = 1 + n_{SG} + 2n_{IBR}$
+
+---
+
+### Algorithm
+
+```
+INPUT:  SCED dispatch {P_k^E, P_k^In, P_k^PFRr, P_k^PFRd}
+        Contingency size ΔP^L
+        IBR parameters {P_j^min, P_j^max, η_j, E_j0, E_j^min, E_j^max}
+        T_sg, T_ibr, f_db, T_sim
+
+OUTPUT: Δf(t), {P_j^In(t)}, {P_j^PFR(t)}
+
+─────────────────────────────────────────────────────────
+INITIALIZATION
+─────────────────────────────────────────────────────────
+1. Set initial state:
+   y₀ ← [Δf=0, {P_i^Gov=0}, {P_j^PFR=0}, {E_j^soc=0.5·E_j0}]
+
+─────────────────────────────────────────────────────────
+ODE INTEGRATION  (ode45 calls F(t,y) at each step)
+─────────────────────────────────────────────────────────
+2. Integrate ẏ = F(t, y) over [0, T_sim]
+
+   ── F(t, y): Right-Hand Side ──────────────────────────
+
+   3. Extract states:
+      Δf, {P_i^Gov}, {P_j^PFR}, {E_j^soc} ← y
+
+   4. SoC eligibility:
+      s_j ← 1{ E_j^soc > E_j^min }          ▷ 0 if depleted
+
+   5. Compute VI bounds:
+      P̄_j^VI,+  ← max( min(P_j^In, P̄_j - P_j^ess - P_j^PFR), 0 )
+      P_j^VI,-   ← min( -(P_j^ess + P_j^PFR - P_j^min), 0 )
+
+   ── SWING EQUATION: Resolve Δf' and P_j^VI ──────────
+   (Fixed-point iteration with saturation sweep)
+
+   6. Initialize: capped_j ← false,  P_j^VI,cap ← 0
+
+   7. for iter = 1 to n_IBR + 2:
+
+      a. free_j ← s_j AND NOT capped_j
+
+      b. rhs ← -ΔP^L + Σ P_i^Gov + Σ(P_j^PFR · s_j) + Σ P_j^VI,cap
+
+      c. if rhs ≤ 0:                          ▷ FDP (frequency decline)
+            M_eff ← M_sg + Σ(M_j^vi · free_j)
+            Δf'   ← rhs / M_eff
+            P_j^VI,trial ← M_j^vi · free_j · (-Δf')
+
+         else:                                ▷ FRP (frequency recovery)
+            M_eff ← M_sg + Σ(M_j^vi/η_j · free_j)
+            Δf'   ← rhs / M_eff
+            P_j^VI,trial ← -(M_j^vi/η_j) · free_j · Δf'
+
+      d. for each j:
+            if P_j^VI,trial > P̄_j^VI,+:      ▷ Headroom clipping
+               capped_j ← true
+               P_j^VI,cap ← P̄_j^VI,+
+
+            elif P_j^VI,trial < P_j^VI,-:     ▷ Footroom clipping
+               capped_j ← true
+               P_j^VI,cap ← P_j^VI,-
+
+            else: break                       ▷ No violations → converged
+
+   8. Assign final VI output:
+      P_j^VI ← P_j^VI,trial   if free_j
+             ← P_j^VI,cap     if capped_j
+             ← 0              if NOT s_j
+
+   ── PFR SETPOINTS (first-order lag with deadband) ────
+
+   9.  Δf_exc ← max(-Δf - f_db, 0)
+
+   10. P_i^Gov,sp ← min(K_i^d · Δf_exc,  P̄_i^PFRr)
+
+   11. P_j^PFR,sp ← s_j · min(K_j^d · Δf_exc,
+                               P̄_j^PFRr,
+                               max(P̄_j - P_j^ess - P_j^VI, 0))
+
+   ── ASSEMBLE ẏ ───────────────────────────────────────
+
+   12. dΔf/dt      ← Δf'
+       dP_i^Gov/dt ← (P_i^Gov,sp - P_i^Gov)  / T_sg
+       dP_j^PFR/dt ← (P_j^PFR,sp - P_j^PFR) / T_ibr
+       dE_j^soc/dt ← -(P_j^ess + P_j^VI + s_j·P_j^PFR) / 3600
+
+   13. return ẏ
+```
+
+---
+
+### Key Design Notes
+
+| Feature | Description |
+| :--- | :--- |
+| **VI resolution** | Algebraic fixed-point at each integration step; no separate ODE for VI |
+| **FDP/FRP branching** | Different effective inertia depending on sign of `rhs`: discharge (`M_vi`) vs. absorption (`M_vi/η`) |
+| **Saturation sweep** | Monotone iteration — once an IBR is capped, it stays capped; converges within `n_IBR + 2` iterations |
+| **Headroom clipping** | `P_j^VI` capped at `P̄_j - P_j^ess - P_j^PFR` |
+| **Footroom clipping** | `P_j^VI` floored at `-(P_j^ess + P_j^PFR - P_j^min)` |
+| **SoC gate** | IBR excluded from both VI and PFR if `E_j^soc ≤ E_j^min` |
