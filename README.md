@@ -19,7 +19,7 @@ This repository provides the theoretical backbone and data parameters of the res
     * Description: Contains the detailed mathematical derivations and optimization problem formulations proposed in the paper.
 
 * **📝 SCED Simulation Data & Assumptions**
-    * Files: **[`ASSUMPTIONS_IEEE30.md`](./SCED%20Simulation/ASSUMPTIONS_IEEE30.md)** for the IEEE 30-bus system, **[`ASSUMPTIONS_IEEE118.md`](./SCED%20Simulation/ASSUMPTIONS_IEEE118.md)** for the IEEE 118-bus system
+    * Files: **[`ASSUMPTIONS_IEEE30.md`](./SCED%20Simulation/ASSUMPTIONS_IEEE30.md)**, **[`GenData_IEEE30.xlsx`](./SCED%20Simulation/GenData_IEEE30.xlsx)** for the IEEE 30-bus system, **[`ASSUMPTIONS_IEEE118.md`](./SCED%20Simulation/ASSUMPTIONS_IEEE118.md)**, **[`GenData_IEEE118.xlsx`](./SCED%20Simulation/GenData_IEEE3118.xlsx)** for the IEEE 118-bus system
     * Description: Lists all specific simulation parameters, including grid modifications, generator characteristics, and cost function settings used to generate the results.
 
 * **📝 TDS Simulation Data & Assumptions**
