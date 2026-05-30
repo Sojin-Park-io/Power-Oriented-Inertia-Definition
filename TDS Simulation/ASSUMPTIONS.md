@@ -1,19 +1,19 @@
-## Detailed Assumptions for the Time-Domain Simulation (TDS)
+# Time-Domain Simulation (TDS) — Detailed Documentation
 
-This document provides a detailed breakdown of the simulation setup, model parameters, and scenario configurations used in the time-domain frequency simulations. The TDS uses dispatch results from the IEEE 118-bus SCED as its input.
+This document provides a detailed breakdown of the simulation setup, model parameters, scenario configurations, and algorithm used in the time-domain frequency simulations. The TDS uses dispatch results from the IEEE 118-bus SCED as its input.
 
 ---
 
-### 1. Input from SCED
+## 1. Input from SCED
 
 The TDS is driven by the pre-computed SCED dispatch results. The following quantities are loaded directly:
 
 | Description |
 | :--- |
-| Per-Synchronous Generator (SG) Scheduled Output: $P_i^{\rm E}$, $P_i^{\rm In}$, $P_i^{\rm PFRr}$, $P_i^{\rm PFRd}$ |
-| Per-Inverter-Based Resource (IBR) Scheduled Output: $P_j^{\rm E}$, $P_j^{\rm In}$, $P_j^{\rm PFRr}$, $P_j^{\rm PFRd}$ |
-| Largest Contingency Size: $\Delta P^{\rm L}$ [MW] |
-| IBR physical limits (capacity, SoC bounds): $P_j^{\min}$, $P_j^{\max}$, $E_j^{\min}$, $E_j^{\max}$, $E_{j0}$, $\eta$ |
+| Per-SG scheduled output: $P_i^{\rm E}$, $P_i^{\rm In}$, $P_i^{\rm PFR,r}$, $P_i^{\rm PFR,d}$ |
+| Per-IBR scheduled output: $P_j^{\rm E}$, $P_j^{\rm In}$, $P_j^{\rm PFR,r}$, $P_j^{\rm PFR,d}$ |
+| Largest contingency size: $\Delta P^{\rm L}$ |
+| IBR physical limits: $P_j^{\min}$, $P_j^{\max}$, $E_j^{\min}$, $E_j^{\max}$, $E_{j0}$, $\eta_j$ |
 | Frequency security limits used in SCED: `RoCoF_lim`, `Nadir_lim`, `QSS_lim` |
 | IBR type indices (Type A / Type B): `iVI_only`, `iPFR_all` |
 
@@ -21,206 +21,233 @@ All TDS runs use Case 1 ($\alpha = 1.0$, $\beta = 0.0$) as the baseline SCED dis
 
 ---
 
-### 2. System Dynamics Model
+## 2. System Dynamics Model
 
-All SGs are assumed to swing coherently, reducing the multi-machine system to a single equivalent swing equation:
+All resources are assumed to swing coherently, reducing the multi-machine system to a single equivalent swing equation:
 
-$M_{\rm eff} \cdot \dot{f}(t) = -\Delta P^L + \sum_k P_k^E(t) + \sum_k P_k^{{\rm PFR}}(t) + \sum_{j,capped} P_j^{\rm In}(t)$
+$$M_{\rm eff}(t) \cdot \Delta f'(t) = -\Delta P^{\rm L} + \sum_i P_i^{\rm PFR}(t) + \sum_j P_j^{\rm PFR}(t) \cdot s_j(t) + \sum_j P_j^{\rm In}(t)$$
 
-where $M_{\rm eff}$ is the effective inertia (SG + active IBR virtual inertia), computed iteratively to respect per-IBR headroom and footroom constraints.
+where $M_{\rm eff}(t)$ is the effective inertia (SG + active IBR virtual inertia), computed iteratively at each time step to respect per-IBR headroom and footroom constraints.
 
-#### 2a. Governor Model (SG)
+### 2a. Governor Model (SG)
 
 SG primary frequency response is modeled as a first-order lag:
 
-$$\dot{P}_{i}^{\rm PFR}(t) = \frac{P_{\rm sp,i}(t) - P_{i}^{\rm PFR}(t)}{T_{\rm SG}}$$
+$$\dot{P}_{i}^{\rm PFR}(t) = \frac{P_{i}^{\rm PFR,sp}(t) - P_{i}^{\rm PFR}(t)}{T_{\rm SG}}$$
 
 | Parameter | Value | Unit |
 | :--- | :--- | :--- |
-| **Governor time constant ($T_{\rm SG}$)** | $2.0$ | s |
-| **Frequency deadband ($f_{\rm db}$)** | $0.036$ | Hz |
+| Governor time constant ($T_{\rm SG}$) | $2.0$ | s |
+| Frequency deadband ($f_{\rm db}$) | $0.036$ | Hz |
 
-#### 2b. IBR Model
+The setpoint $P_i^{\rm PFR,sp}(t)$ is computed from the droop characteristic, clipped at the scheduled PFR capacity $P_i^{\rm PFR,r}$:
+
+$$P_i^{\rm PFR,sp}(t) = \min \left(K_i^d \cdot \Delta f_{\rm exc}(t),\ P_i^{\rm PFR,r}\right)$$
+
+$$\Delta f_{\rm exc}(t) = \max(-\Delta f(t) - f_{\rm db},\ 0)$$
+
+### 2b. IBR PFR Model
 
 IBR PFR response is modeled as a first-order lag:
 
-$$\dot{P}_{j}^{\rm PFR}(t) = \frac{P_{\rm sp,j}(t) - P_{j}^{\rm PFR}(t)}{T_{\rm IBR}}$$
+$$\dot{P}_{j}^{\rm PFR}(t) = \frac{P_{j}^{\rm PFR,sp}(t) - P_{j}^{\rm PFR}(t)}{T_{\rm IBR}}$$
 
 | Parameter | Value | Unit |
 | :--- | :--- | :--- |
-| **IBR response time constant ($T_{\rm IBR}$)** | $0.1$ | s |
-| **Round-trip efficiency ($\eta$)** | $0.9$ | — |
+| IBR response time constant ($T_{\rm IBR}$) | $0.1$ | s |
+| Round-trip efficiency ($\eta_j$) | $0.9$ | — |
 
-The setpoint $P_{\rm sp,j}$ is computed from the droop characteristic, clipped at the scheduled PFR capacity $P_j^{\rm PFR,r}$.
+The setpoint $P_j^{\rm PFR,sp}(t)$ is clipped at the scheduled PFR capacity and the residual headroom after VI:
 
-#### 2c. Virtual Inertia Response
+$$P_j^{\rm PFR,sp}(t) = s_j(t) \cdot \min \left(K_j^d \cdot \Delta f_{\rm exc}(t),\ P_j^{\rm PFR,r},\ \max(P_j^{\max} - P_j^{\rm E} - P_j^{\rm In}(t),\ 0)\right)$$
 
-The IBR virtual inertia output $P_{\rm VI,k}$ is determined in each time step, respecting:
+### 2c. Virtual Inertia Response
 
-- **Headroom:** $P_j^{\rm In} \leq \min(P_j^{\rm In}\; P_j^{\max} - P_j^{\rm E} - P_j^{\rm PFR}(t))$
-- **Footroom:** $P_j^{\rm In} \geq P_j^{\rm In,low}$ (strategy-dependent)
-- **SoC check:** $P_j^{\rm In} = 0$ if $E_j(t) \leq \underline{E}_j$
+The IBR virtual inertia output $P_j^{\rm In}(t)$ is determined at each time step, respecting:
+
+- **Headroom:** $P_j^{\rm In}(t) \leq \max\!\left(\min(P_j^{\rm In},\ P_j^{\max} - P_j^{\rm E} - P_j^{\rm PFR}(t)),\ 0\right)$
+- **Footroom:** $P_j^{\rm In}(t) \geq \min\!\left(-(P_j^{\rm E} + P_j^{\rm PFR}(t) - P_j^{\min}),\ 0\right)$
+- **SoC check:** $P_j^{\rm In}(t) = 0$ if $E_j(t) \leq E_j^{\min}$
+
+### 2d. SoC Dynamics
+
+$$\dot{E}_j(t) = -\frac{1}{3600}\left(P_j^{\rm E} + P_j^{\rm In}(t) + s_j(t) \cdot P_j^{\rm PFR}(t)\right)$$
 
 ---
 
-### 3. Simulation Setup
+## 3. Simulation Setup
 
 | Parameter | Value | Unit |
 | :--- | :--- | :--- |
-| **Simulation duration ($T_{\rm sim}$)** | $35$ | s |
-| **ODE solver** | `ode45` | — |
-| **Relative tolerance** | $10^{-7}$ | — |
-| **Absolute tolerance** | $10^{-9}$ | — |
-| **Maximum ODE step size** | $0.02$ | s |
-| **Output time step** | $0.005$ | s |
+| Simulation duration ($T_{\rm sim}$) | $35$ | s |
+| ODE solver | `ode45` | — |
+| Relative tolerance | $10^{-7}$ | — |
+| Absolute tolerance | $10^{-9}$ | — |
+| Maximum ODE step size | $0.02$ | s |
+| Output time step | $0.005$ | s |
 
 ---
 
-### 4. Simulation Cases
+## 4. Simulation Cases
 
 Two TDS simulations are conducted, each examining a different reliability aspect of the P-oriented definition.
 
-#### 4a. VI Recovery Strategies — Successive Contingency
+### 4a. VI Recovery Strategies — Successive Contingency
 
-This simulation compares three VI recovery strategies following a successive event:
+This simulation compares three VI recovery strategies following successive generation trip events:
 
 | Event | Time | Description |
 | :--- | :--- | :--- |
-| **Event 1** | $t = 0 \text{s}$ | Largest generator trip ($\Delta P^L = 600 \text{MW}$) |
-| **Event 2** | $t = 15 \text{s}$ | Second generator trip ($\Delta P^{L2} = 300 \text{MW}$) |
-
-The three strategies compared are:
+| Event 1 | $t = 0$ s | Largest generator trip ($\Delta P^{\rm L} = 600$ MW) |
+| Event 2 | $t = 15$ s | Second generator trip ($\Delta P^{\rm L2} = 300$ MW) |
 
 | Strategy | Description |
 | :--- | :--- |
-| **RoCoF Recovery** | $P_j^{\rm In} = -(M_{\rm In}/\eta)\cdot {\Delta f'}$ |
-| **Constant Recovery (QSS)** | After each nadir, IBR absorbs a constant $P_j^{\rm const}$ for a fixed window ($t_{\rm delay} = 4 \text{s}$, $t_{\rm rec} = 4 \text{s}$) to recharge, then $P_j^{\rm In} = 0$ |
-| **Discharge-only VI** | $P_j^{\rm In} \geq 0$ enforced (no absorption); IBR responds only when frequency is falling |
+| **RoCoF Recovery** | $P_j^{\rm In}(t) = -(M_j^{\rm In}/\eta_j) \cdot \Delta f'(t)$ in both FDP and FRP |
+| **Constant Recovery** | After each nadir, IBR absorbs a constant $P_j^{\rm const}$ for a fixed window ($t_{\rm delay} = 4$ s, $t_{\rm rec} = 4$ s), then $P_j^{\rm In}(t) = 0$ |
+| **Discharge-only VI** | $P_j^{\rm In}(t) \geq 0$ enforced; IBR responds only when frequency is declining |
 
-#### 4b. Symmetrical vs. Non-Symmetrical Footroom — Successive Event
+### 4b. Symmetrical vs. Non-Symmetrical Footroom — Successive Event
 
-This simulation compares two footroom allocation strategies under a successive gen-load trip:
+This simulation compares two footroom allocation strategies under a successive generation and load trip:
 
 | Event | Time | Description |
 | :--- | :--- | :--- |
-| **Event 1** | $t = 0 \text{s}$ | Generator trip ($\Delta P^{L1} = +600 \text{MW}$) |
-| **Event 2** | $t = 15 \text{s}$ | Load trip ($\Delta P^{L2} = -500 \text{MW}$) |
-
-The two footroom strategies compared are:
+| Event 1 | $t = 0$ s | Generator trip ($\Delta P^{\rm L1} = +600$ MW) |
+| Event 2 | $t = 15$ s | Load trip ($\Delta P^{\rm L2} = -500$ MW) |
 
 | Strategy | Footroom | Description |
 | :--- | :--- | :--- |
-| **Symmetrical** | $P_j^{\rm In} / \eta$ | Full absorption headroom; IBR can recover all discharged energy |
-| **Non-Symmetrical** | $P_j^{\rm In} / (4\eta)$ | Reduced footroom (25% of symmetrical); clips VI absorption on frequency recovery |
+| **Symmetrical** | $P_j^{\rm In} / \eta_j$ | Full absorption capacity; IBR can recover all discharged energy |
+| **Non-Symmetrical** | $P_j^{\rm In} / (4\eta_j)$ | Reduced footroom (25% of symmetrical); clips $P_j^{\rm In}(t)$ during FRP |
 
-When footroom is hit, the capped IBR's $M_j$ is excluded from the effective inertia, reducing effective absorption inertia and amplifying frequency overshoot.
-
-
-## Time-Domain Simulation (TDS) Algorithm
-
-### Overview
-
-The TDS integrates four coupled dynamical systems simultaneously via MATLAB's `ode45` (adaptive step-size Runge-Kutta):
-
-| State Variable | Description |
-| :--- | :--- |
-| $\Delta f(t)$ | COI frequency deviation |
-| $P_i^{\text{Gov}}(t)$ | SG governor output (per SG) |
-| $P_j^{\text{PFR}}(t)$ | IBR PFR output (per IBR) |
-| $E_j^{\text{soc}}(t)$ | IBR SoC (per IBR) |
-
-State vector dimension: $n_S = 1 + n_{SG} + 2n_{IBR}$
+When footroom is hit, the capped IBR's $M_j^{\rm In}$ is excluded from $M_{\rm eff}(t)$, reducing effective absorption inertia and amplifying frequency overshoot.
 
 ---
 
-### Algorithm
+## 5. TDS Algorithm
+
+### State Vector
+
+| Variable | Description | Dimension |
+| :--- | :--- | :--- |
+| $\Delta f(t)$ | COI frequency deviation | $1$ |
+| $P_i^{\rm PFR}(t)$ | SG governor (PFR) output | $n_{SG}$ |
+| $P_j^{\rm PFR}(t)$ | IBR PFR output | $n_{IBR}$ |
+| $E_j(t)$ | IBR state of charge | $n_{IBR}$ |
+
+Total dimension: $n_S = 1 + n_{SG} + 2n_{IBR}$
+
+---
 
 ```
-INPUT:  SCED dispatch {P_k^E, P_k^In, P_k^PFRr, P_k^PFRd}
-        Contingency size ΔP^L
-        IBR parameters {P_j^min, P_j^max, η_j, E_j0, E_j^min, E_j^max}
-        T_sg, T_ibr, f_db, T_sim
+INPUT
+  SCED dispatch : {P_k^E, P_k^In, P_k^PFRr, P_k^PFRd}   ← scalars, no (t)
+  Contingency   : ΔP^L
+  IBR params    : {P_j^min, P_j^max, η_j, E_j0, E_j^min}
+  Dynamics      : T_SG, T_IBR, f_db, T_sim
 
-OUTPUT: Δf(t), {P_j^In(t)}, {P_j^PFR(t)}
+OUTPUT
+  Δf(t),  {P_j^In(t)},  {P_j^PFR(t)}                    ← time functions
 
-─────────────────────────────────────────────────────────
-INITIALIZATION
-─────────────────────────────────────────────────────────
-1. Set initial state:
-   y₀ ← [Δf=0, {P_i^Gov=0}, {P_j^PFR=0}, {E_j^soc=0.5·E_j0}]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP 1. INITIALIZATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-─────────────────────────────────────────────────────────
-ODE INTEGRATION  (ode45 calls F(t,y) at each step)
-─────────────────────────────────────────────────────────
-2. Integrate ẏ = F(t, y) over [0, T_sim]
+  y₀ ← [Δf=0,  {P_i^PFR=0},  {P_j^PFR=0},  {E_j=E_j0}]
 
-   ── F(t, y): Right-Hand Side ──────────────────────────
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP 2. ODE INTEGRATION  (ode45, adaptive RK)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-   3. Extract states:
-      Δf, {P_i^Gov}, {P_j^PFR}, {E_j^soc} ← y
+  Integrate ẏ = F(t, y) over [0, T_sim]
+  F(t, y) is evaluated at each integration step:
 
-   4. SoC eligibility:
-      s_j ← 1{ E_j^soc > E_j^min }          ▷ 0 if depleted
+  ┌─────────────────────────────────────────────┐
+  │  F(t, y) : Right-Hand Side                  │
+  └─────────────────────────────────────────────┘
 
-   5. Compute VI bounds:
-      P̄_j^VI,+  ← max( min(P_j^In, P̄_j - P_j^ess - P_j^PFR), 0 )
-      P_j^VI,-   ← min( -(P_j^ess + P_j^PFR - P_j^min), 0 )
+  2-1. Extract states from y:
+       Δf(t),  {P_i^PFR(t)},  {P_j^PFR(t)},  {E_j(t)}
 
-   ── SWING EQUATION: Resolve Δf' and P_j^VI ──────────
-   (Fixed-point iteration with saturation sweep)
+  2-2. SoC eligibility:
+       s_j(t) ← 1{ E_j(t) > E_j^min }          ▷ 0 if depleted
 
-   6. Initialize: capped_j ← false,  P_j^VI,cap ← 0
+  2-3. Compute VI bounds at current time step:
+       P_j^{In,+}(t) ← max( min(P_j^In, P_j^max - P_j^E - P_j^PFR(t)), 0 )
+       P_j^{In,-}(t) ← min( -(P_j^E + P_j^PFR(t) - P_j^min), 0 )
+                ↑ SCED scalar              ↑ time function
 
-   7. for iter = 1 to n_IBR + 2:
+  ┌─────────────────────────────────────────────┐
+  │  Swing Equation                             │
+  │  Resolve Δf'(t) and P_j^In(t)              │
+  │  with saturation sweep                      │
+  └─────────────────────────────────────────────┘
 
-      a. free_j ← s_j AND NOT capped_j
+  2-4. Initialize:
+       capped_j ← false,  P_j^{In,cap}(t) ← 0
 
-      b. rhs ← -ΔP^L + Σ P_i^Gov + Σ(P_j^PFR · s_j) + Σ P_j^VI,cap
+  2-5. for iter = 1 to n_IBR + 2:
 
-      c. if rhs ≤ 0:                          ▷ FDP (frequency decline)
-            M_eff ← M_sg + Σ(M_j^vi · free_j)
-            Δf'   ← rhs / M_eff
-            P_j^VI,trial ← M_j^vi · free_j · (-Δf')
+       free_j ← s_j(t) AND NOT capped_j
 
-         else:                                ▷ FRP (frequency recovery)
-            M_eff ← M_sg + Σ(M_j^vi/η_j · free_j)
-            Δf'   ← rhs / M_eff
-            P_j^VI,trial ← -(M_j^vi/η_j) · free_j · Δf'
+       rhs ← -ΔP^L
+             + Σ_i P_i^PFR(t)
+             + Σ_j (P_j^PFR(t) · s_j(t))
+             + Σ_j P_j^{In,cap}(t)
 
-      d. for each j:
-            if P_j^VI,trial > P̄_j^VI,+:      ▷ Headroom clipping
-               capped_j ← true
-               P_j^VI,cap ← P̄_j^VI,+
+       if rhs ≤ 0:                      ▷ FDP (frequency decline)
+         M_eff ← M_sg + Σ_j(M_j^In · free_j)
+         Δf'(t)         ← rhs / M_eff
+         P_j^{In,trial}(t) ← M_j^In · free_j · (-Δf'(t))
 
-            elif P_j^VI,trial < P_j^VI,-:     ▷ Footroom clipping
-               capped_j ← true
-               P_j^VI,cap ← P_j^VI,-
+       else:                            ▷ FRP (frequency recovery)
+         M_eff ← M_sg + Σ_j(M_j^In/η_j · free_j)
+         Δf'(t)         ← rhs / M_eff
+         P_j^{In,trial}(t) ← -(M_j^In/η_j) · free_j · Δf'(t)
 
-            else: break                       ▷ No violations → converged
+       for each j:
+         if P_j^{In,trial}(t) > P_j^{In,+}(t):   ▷ Headroom clipping
+           capped_j       ← true
+           P_j^{In,cap}(t) ← P_j^{In,+}(t)
 
-   8. Assign final VI output:
-      P_j^VI ← P_j^VI,trial   if free_j
-             ← P_j^VI,cap     if capped_j
-             ← 0              if NOT s_j
+         elif P_j^{In,trial}(t) < P_j^{In,-}(t):  ▷ Footroom clipping
+           capped_j       ← true
+           P_j^{In,cap}(t) ← P_j^{In,-}(t)
 
-   ── PFR SETPOINTS (first-order lag with deadband) ────
+         else: break                    ▷ No violations → converged
 
-   9.  Δf_exc ← max(-Δf - f_db, 0)
+  2-6. Assign final VI output:
+       P_j^In(t) ← P_j^{In,trial}(t)  if free_j      (unconstrained)
+                ← P_j^{In,cap}(t)     if capped_j    (at headroom/footroom limit)
+                ← 0                   if NOT s_j(t)  (SoC depleted)
 
-   10. P_i^Gov,sp ← min(K_i^d · Δf_exc,  P̄_i^PFRr)
+  ┌─────────────────────────────────────────────┐
+  │  PFR Setpoints                              │
+  │  First-order lag with deadband              │
+  └─────────────────────────────────────────────┘
 
-   11. P_j^PFR,sp ← s_j · min(K_j^d · Δf_exc,
-                               P̄_j^PFRr,
-                               max(P̄_j - P_j^ess - P_j^VI, 0))
+  2-7. Δf_exc(t) ← max(-Δf(t) - f_db,  0)
 
-   ── ASSEMBLE ẏ ───────────────────────────────────────
+  2-8. P_i^{PFR,sp}(t) ← min(K_i^d · Δf_exc(t),  P_i^{PFR,r})
+                                                    ↑ SCED scalar
 
-   12. dΔf/dt      ← Δf'
-       dP_i^Gov/dt ← (P_i^Gov,sp - P_i^Gov)  / T_sg
-       dP_j^PFR/dt ← (P_j^PFR,sp - P_j^PFR) / T_ibr
-       dE_j^soc/dt ← -(P_j^ess + P_j^VI + s_j·P_j^PFR) / 3600
+  2-9. P_j^{PFR,sp}(t) ← s_j(t) · min(K_j^d · Δf_exc(t),
+                                        P_j^{PFR,r},
+                                        max(P_j^max - P_j^E - P_j^In(t), 0))
+                                         ↑ SCED scalar  ↑ SCED scalar
 
-   13. return ẏ
+  ┌─────────────────────────────────────────────┐
+  │  Assemble ẏ                                 │
+  └─────────────────────────────────────────────┘
+
+  2-10. dΔf/dt        ← Δf'(t)
+        dP_i^PFR/dt   ← (P_i^{PFR,sp}(t) - P_i^PFR(t))  / T_SG
+        dP_j^PFR/dt   ← (P_j^{PFR,sp}(t) - P_j^PFR(t))  / T_IBR
+        dE_j/dt       ← -(P_j^E + P_j^In(t) + s_j(t)·P_j^PFR(t)) / 3600
+                              ↑ SCED scalar
+
+  return ẏ
 ```
 
 ---
@@ -229,9 +256,11 @@ ODE INTEGRATION  (ode45 calls F(t,y) at each step)
 
 | Feature | Description |
 | :--- | :--- |
-| **VI resolution** | Algebraic fixed-point at each integration step; no separate ODE for VI |
-| **FDP/FRP branching** | Different effective inertia depending on sign of `rhs`: discharge (`M_vi`) vs. absorption (`M_vi/η`) |
-| **Saturation sweep** | Monotone iteration — once an IBR is capped, it stays capped; converges within `n_IBR + 2` iterations |
-| **Headroom clipping** | `P_j^VI` capped at `P̄_j - P_j^ess - P_j^PFR` |
-| **Footroom clipping** | `P_j^VI` floored at `-(P_j^ess + P_j^PFR - P_j^min)` |
-| **SoC gate** | IBR excluded from both VI and PFR if `E_j^soc ≤ E_j^min` |
+| **SCED vs. TDS variables** | $P_j^{\rm In}$, $P_j^{\rm E}$, $P_j^{\rm PFR,r}$ are SCED scalars (no $(t)$); $P_j^{\rm In}(t)$, $P_j^{\rm PFR}(t)$, $\Delta f(t)$ are TDS time functions |
+| **VI resolution** | $P_j^{\rm In}(t)$ resolved algebraically at each integration step; no separate ODE |
+| **FDP branch** | Frequency declining → discharge: $M_j^{\rm In}$ |
+| **FRP branch** | Frequency recovering → absorb with loss: $M_j^{\rm In}/\eta_j$ |
+| **Saturation sweep** | Monotone — once capped, stays capped; converges within $n_{IBR}+2$ steps |
+| **Headroom clipping** | $P_j^{\rm In}(t)$ capped at $P_j^{\max} - P_j^{\rm E} - P_j^{\rm PFR}(t)$ |
+| **Footroom clipping** | $P_j^{\rm In}(t)$ floored at $-(P_j^{\rm E} + P_j^{\rm PFR}(t) - P_j^{\min})$ |
+| **SoC gate** | IBR excluded from $P_j^{\rm In}(t)$ and $P_j^{\rm PFR}(t)$ if $E_j(t) \leq E_j^{\min}$ |
