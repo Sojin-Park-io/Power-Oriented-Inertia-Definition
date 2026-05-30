@@ -20,6 +20,7 @@ The TDS is driven by the pre-computed SCED dispatch results. The following quant
 All TDS runs use Case 1 ($\alpha = 1.0$, $\beta = 0.0$) as the baseline SCED dispatch.
 
 ---
+| **SCED vs. TDS variables** | $P_j^{\rm In}$, $P_j^{\rm E}$, $P_j^{\rm PFR,r}$ are SCED scalars (no (t)); $P_j^{\rm In}(t)$, $P_j^{\rm PFR}(t)$, $\Delta f(t)$ are TDS time functions |
 
 ## 2. System Dynamics Model
 
@@ -59,19 +60,19 @@ $$\dot{P}_{j}^{\rm PFR}(t) = \frac{P_{j}^{\rm PFR,sp}(t) - P_{j}^{\rm PFR}(t)}{T
 
 The setpoint $P_j^{\rm PFR,sp}(t)$ is clipped at the scheduled PFR capacity and the residual headroom after VI:
 
-$$P_j^{\rm PFR,sp}(t) = s_j(t) \cdot \min \left(K_j^d \cdot \Delta f_{\rm exc}(t),\ P_j^{\rm PFR,r},\ \max(P_j^{\max} - P_j^{\rm E} - P_j^{\rm In}(t),\ 0)\right)$$
+$$P_j^{\rm PFR,sp}(t) = \min \left(K_j^d \cdot \Delta f_{\rm exc}(t),\ P_j^{\rm PFR,r},\ \max(P_j^{\max} - P_j^{\rm E} - P_j^{\rm In}(t),\ 0)\right)$$
 
 ### 2c. Virtual Inertia Response
 
 The IBR virtual inertia output $P_j^{\rm In}(t)$ is determined at each time step, respecting:
 
-- **Headroom:** $P_j^{\rm In}(t) \leq \max\!\left(\min(P_j^{\rm In},\ P_j^{\max} - P_j^{\rm E} - P_j^{\rm PFR}(t)),\ 0\right)$
-- **Footroom:** $P_j^{\rm In}(t) \geq \min\!\left(-(P_j^{\rm E} + P_j^{\rm PFR}(t) - P_j^{\min}),\ 0\right)$
+- **Headroom:** $P_j^{\rm In}(t) \leq \max\left(\min(P_j^{\rm In},\ P_j^{\max} - P_j^{\rm E} - P_j^{\rm PFR}(t)),\ 0\right)$
+- **Footroom:** $P_j^{\rm In}(t) \geq \min\left(-(P_j^{\rm E} + P_j^{\rm PFR}(t) - P_j^{\min}),\ 0\right)$
 - **SoC check:** $P_j^{\rm In}(t) = 0$ if $E_j(t) \leq E_j^{\min}$
 
 ### 2d. SoC Dynamics
 
-$$\dot{E}_j(t) = -\frac{1}{3600}\left(P_j^{\rm E} + P_j^{\rm In}(t) + s_j(t) \cdot P_j^{\rm PFR}(t)\right)$$
+$$\dot{E}_j(t) = -\frac{1}{3600}\left(P_j^{\rm E} + P_j^{\rm In}(t) + P_j^{\rm PFR}(t)\right)$$
 
 ---
 
@@ -105,7 +106,7 @@ This simulation compares three VI recovery strategies following successive gener
 | :--- | :--- |
 | **RoCoF Recovery** | $P_j^{\rm In}(t) = -(M_j^{\rm In}/\eta_j) \cdot \Delta f'(t)$ in both FDP and FRP |
 | **Constant Recovery** | After each nadir, IBR absorbs a constant $P_j^{\rm const}$ for a fixed window ($t_{\rm delay} = 4$ s, $t_{\rm rec} = 4$ s), then $P_j^{\rm In}(t) = 0$ |
-| **Discharge-only VI** | $P_j^{\rm In}(t) \geq 0$ enforced; IBR responds only when frequency is declining |
+| **No Recovery** | $P_j^{\rm In}(t) \geq 0$ enforced; IBR responds only when frequency is declining |
 
 ### 4b. Symmetrical vs. Non-Symmetrical Footroom — Successive Event
 
@@ -176,12 +177,10 @@ STEP 2. ODE INTEGRATION  (ode45, adaptive RK)
   2-3. Compute VI bounds at current time step:
        P_j^{In,+}(t) ← max( min(P_j^In, P_j^max - P_j^E - P_j^PFR(t)), 0 )
        P_j^{In,-}(t) ← min( -(P_j^E + P_j^PFR(t) - P_j^min), 0 )
-                ↑ SCED scalar              ↑ time function
 
   ┌─────────────────────────────────────────────┐
   │  Swing Equation                             │
-  │  Resolve Δf'(t) and P_j^In(t)              │
-  │  with saturation sweep                      │
+  │  Resolve Δf'(t) and P_j^In(t)               │
   └─────────────────────────────────────────────┘
 
   2-4. Initialize:
@@ -191,10 +190,7 @@ STEP 2. ODE INTEGRATION  (ode45, adaptive RK)
 
        free_j ← s_j(t) AND NOT capped_j
 
-       rhs ← -ΔP^L
-             + Σ_i P_i^PFR(t)
-             + Σ_j (P_j^PFR(t) · s_j(t))
-             + Σ_j P_j^{In,cap}(t)
+       rhs ← -ΔP^L + Σ_i P_i^PFR(t) + Σ_j (P_j^PFR(t) · s_j(t)) + Σ_j P_j^{In,cap}(t)
 
        if rhs ≤ 0:                      ▷ FDP (frequency decline)
          M_eff ← M_sg + Σ_j(M_j^In · free_j)
@@ -215,7 +211,7 @@ STEP 2. ODE INTEGRATION  (ode45, adaptive RK)
            capped_j       ← true
            P_j^{In,cap}(t) ← P_j^{In,-}(t)
 
-         else: break                    ▷ No violations → converged
+         else: break
 
   2-6. Assign final VI output:
        P_j^In(t) ← P_j^{In,trial}(t)  if free_j      (unconstrained)
@@ -230,12 +226,8 @@ STEP 2. ODE INTEGRATION  (ode45, adaptive RK)
   2-7. Δf_exc(t) ← max(-Δf(t) - f_db,  0)
 
   2-8. P_i^{PFR,sp}(t) ← min(K_i^d · Δf_exc(t),  P_i^{PFR,r})
-                                                    ↑ SCED scalar
 
-  2-9. P_j^{PFR,sp}(t) ← s_j(t) · min(K_j^d · Δf_exc(t),
-                                        P_j^{PFR,r},
-                                        max(P_j^max - P_j^E - P_j^In(t), 0))
-                                         ↑ SCED scalar  ↑ SCED scalar
+  2-9. P_j^{PFR,sp}(t) ← s_j(t) · min(K_j^d · Δf_exc(t), P_j^{PFR,r}, max(P_j^max - P_j^E - P_j^In(t), 0))
 
   ┌─────────────────────────────────────────────┐
   │  Assemble ẏ                                 │
@@ -245,22 +237,11 @@ STEP 2. ODE INTEGRATION  (ode45, adaptive RK)
         dP_i^PFR/dt   ← (P_i^{PFR,sp}(t) - P_i^PFR(t))  / T_SG
         dP_j^PFR/dt   ← (P_j^{PFR,sp}(t) - P_j^PFR(t))  / T_IBR
         dE_j/dt       ← -(P_j^E + P_j^In(t) + s_j(t)·P_j^PFR(t)) / 3600
-                              ↑ SCED scalar
 
   return ẏ
 ```
 
 ---
 
-### Key Design Notes
 
-| Feature | Description |
-| :--- | :--- |
-| **SCED vs. TDS variables** | $P_j^{\rm In}$, $P_j^{\rm E}$, $P_j^{\rm PFR,r}$ are SCED scalars (no $(t)$); $P_j^{\rm In}(t)$, $P_j^{\rm PFR}(t)$, $\Delta f(t)$ are TDS time functions |
-| **VI resolution** | $P_j^{\rm In}(t)$ resolved algebraically at each integration step; no separate ODE |
-| **FDP branch** | Frequency declining → discharge: $M_j^{\rm In}$ |
-| **FRP branch** | Frequency recovering → absorb with loss: $M_j^{\rm In}/\eta_j$ |
-| **Saturation sweep** | Monotone — once capped, stays capped; converges within $n_{IBR}+2$ steps |
-| **Headroom clipping** | $P_j^{\rm In}(t)$ capped at $P_j^{\max} - P_j^{\rm E} - P_j^{\rm PFR}(t)$ |
-| **Footroom clipping** | $P_j^{\rm In}(t)$ floored at $-(P_j^{\rm E} + P_j^{\rm PFR}(t) - P_j^{\min})$ |
-| **SoC gate** | IBR excluded from $P_j^{\rm In}(t)$ and $P_j^{\rm PFR}(t)$ if $E_j(t) \leq E_j^{\min}$ |
+
