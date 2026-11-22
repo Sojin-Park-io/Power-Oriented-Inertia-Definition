@@ -43,6 +43,7 @@ The system operation is based on the Economic Dispatch (ED) problem following a 
 * **Dispatch Interval ($\Delta T$):** $5$ minutes.
 * **Required Time for Fully-Activated PFR ($T^{\rm PFR}$):** $6$ seconds [3].
 * **Nominal Frequency ($f_0$):** $60 \text{Hz}$.
+* **Negative-Direction Reservation Ratio ($\rho$):** $1$ (symmetric footroom reservation in constraint (18)).
 
 ### 4. Frequency Constraint Limits
 
