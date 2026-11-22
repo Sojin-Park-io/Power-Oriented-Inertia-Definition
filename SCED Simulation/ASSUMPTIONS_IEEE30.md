@@ -38,7 +38,7 @@ The variable energy cost of \$3/MWh is applied to the IBR for both energy dispat
 
 The system operation is based on the Economic Dispatch (ED) problem following a prior UC solution where all generators are online.
 
-* **System Demand:** $189.2 \text{MW}$ (approx. 56% of total capacity).
+* **System Demand:** $189.2 \text{MW}$ (approx. 43% of the total installed capacity).
 * **Droop Constant ($R$):** $5\%$ for all resources.
 * **Dispatch Interval ($\Delta T$):** $5$ minutes.
 * **Required Time for Fully-Activated PFR ($T^{\rm PFR}$):** $6$ seconds [3].
