@@ -59,6 +59,6 @@ The optimization formulation uses the following maximum allowable limits for fre
 
 ## 📚 References
 
-* **[1]** P. Kushwaha, V. Prakash, and R. Bhakar, "A novel framework to assess synthetic inertia \& primary frequency response support from energy storagy systems," \textit{Sustainable Energy, Grids and Networks}, vol. 34, 6 2023.
-* **[2]** AEMO, "Hornsdale power reserve virtual machine mode testing summary report,” AEMO, Tech. Rep., Aug. 2023, issued August 2023.
-* **[3]** P.S AEMO, \textit{Market Ancillary Services Specification (MASS), Version 8.2}, AEMO, June 2024, effective 3 June 2024.
+* **[1]** P. Kushwaha, V. Prakash, and R. Bhakar, "A novel framework to assess synthetic inertia & primary frequency response support from energy storage systems," *Sustainable Energy, Grids and Networks*, vol. 34, Jun. 2023.
+* **[2]** AEMO, "Hornsdale power reserve virtual machine mode testing summary report," AEMO, Tech. Rep., Aug. 2023, issued August 2023.
+* **[3]** AEMO, *Market Ancillary Services Specification (MASS), Version 8.2*, AEMO, June 2024, effective 3 June 2024.
