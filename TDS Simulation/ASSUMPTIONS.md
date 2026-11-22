@@ -17,10 +17,11 @@ The TDS is driven by the pre-computed SCED dispatch results. The following quant
 | Frequency security limits used in SCED: `RoCoF_lim`, `Nadir_lim`, `QSS_lim` |
 | IBR type indices (Type A / Type B): `iVI_only`, `iPFR_all` |
 
-All TDS runs use Case 2 of the paper ($\alpha = 1.0$, $\beta = 0.0$, fixed 600 MW largest contingency) as the baseline SCED dispatch.
+All TDS runs use Case 2 of the paper ($\alpha = 1.0$, $\beta = 0.0$, fixed 600 MW largest contingency) as the baseline SCED dispatch; this case is indexed as `j_case = 1` in the code.
+
+Throughout this document, $P_j^{\rm In}$, $P_j^{\rm E}$, and $P_j^{\rm PFR,r}$ denote SCED scalars, while $P_j^{\rm In}(t)$, $P_j^{\rm PFR}(t)$, and $\Delta f(t)$ denote TDS time functions.
 
 ---
-| **SCED vs. TDS variables** | $P_j^{\rm In}$, $P_j^{\rm E}$, $P_j^{\rm PFR,r}$ are SCED scalars (no (t)); $P_j^{\rm In}(t)$, $P_j^{\rm PFR}(t)$, $\Delta f(t)$ are TDS time functions |
 
 ## 2. System Dynamics Model
 
