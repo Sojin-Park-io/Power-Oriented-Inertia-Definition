@@ -54,7 +54,6 @@ The variable energy cost of \$3/MWh is applied to both the energy dispatch and t
 | Parameter | Value |
 | :--- | :--- |
 | **Total System Load** | $4{,}242.0 \text{MW}$ |
-| **Net Load** | $4{,}242.0 \text{MW}$ |
 | **IBR penetration** | 30% |
 | **Fixed contingency size** | $600 \text{MW}$ |
 
