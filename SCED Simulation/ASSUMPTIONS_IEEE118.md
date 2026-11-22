@@ -6,7 +6,7 @@ This document provides a detailed breakdown of the adjustments made to the IEEE 
 
 ### 1. Synchronous Generator (SG) Configuration
 
-The IEEE 118-bus base system includes 54 generators total. The last 12 are re-designated as IBRs, resulting in 42 synchronous generators (SGs). The generator with the maximum capacity is set to $600 \, \text{MW}$ and designated as the reference contingency unit; all remaining SGs are scaled down to adjust the IBR penetration share to the target level (35%). The modified capacity values for each unit are provided in the accompanying file [GenData_IEEE118.xlsx](./GenData_IEEE118.xlsx).
+The IEEE 118-bus base system includes 54 generators total. The last 12 are re-designated as IBRs, resulting in 42 synchronous generators (SGs). The generator with the maximum capacity is set to $600 \, \text{MW}$ and designated as the reference contingency unit; all remaining SGs are scaled down to adjust the IBR dispatchable share to the target level (30%). The modified capacity values for each unit are provided in the accompanying file [GenData_IEEE118.xlsx](./GenData_IEEE118.xlsx).
 
 
 The inertia constant is uniformly assigned to all SGs as follows:
@@ -29,7 +29,7 @@ Twelve IBR units, comprising two distinct types, are integrated into the system 
 | **Type B** | IBR 4–12 (9 units) | Energy + Inertia + PFR | $10 \text{s}$ | Available |
 
 * **Type A** units carry a large VI headroom ($H_{\text{max}} = 50 \text{s}$) in exchange for no PFR obligation, acting as dedicated inertia providers.
-* **Type B** units provide all ancillary services with a limited VI capability ($\H_{\text{max}} = 10 \text{s}$)
+* **Type B** units provide all ancillary services with a limited VI capability ($H_{\text{max}} = 10 \text{s}$).
 
 #### 2b. Common IBR Parameters
 
@@ -53,14 +53,10 @@ The variable energy cost of \$3/MWh is applied to both the energy dispatch and t
 
 | Parameter | Value |
 | :--- | :--- |
-| **Total System Load** | $4{,}831.0 \text{MW}$ |
+| **Total System Load** | $4{,}242.0 \text{MW}$ |
 | **Net Load** | $4{,}242.0 \text{MW}$ |
-| **RE Output (non-dispatchable, CF = 100%)** | $589.0 \text{MW}$ |
-| **IBR dispatchable share** | 30% |
-| **IBR total penetration** | 35% |
+| **IBR penetration** | 30% |
 | **Fixed contingency size** | $600 \text{MW}$ |
-
-The net load served by the SCED equals the total IEEE 118-bus system demand (approximately $4,242 \text{MW}$), after subtracting the non-dispatchable RE output, which is treated as a negative load.
 
 ---
 
@@ -72,7 +68,8 @@ The system operation is based on the Economic Dispatch (ED) problem following a 
 * **Dispatch Interval ($\Delta T$):** $5$ minutes.
 * **Required Time for Fully-Activated PFR ($T^{\rm PFR}$):** $6$ seconds [3].
 * **Nominal Frequency ($f_0$):** $60 \text{Hz}$.
-
+* **Negative-Direction Reservation Ratio ($\rho$):** $1$ (symmetric footroom reservation in constraint (18); varied over $\{0.25, 0.5, 0.75, 1\}$ in the sensitivity analysis of the paper).
+  
 ---
 
 ### 5. Frequency Constraint Limits
@@ -91,12 +88,12 @@ The optimization formulation uses the following frequency security limits.
 
 #### 6a. Largest Contingency Formulation Cases
 
-Two approaches to contingency modeling are compared, with $\alpha = 1.0$ and $\beta = 0.0$ fixed:
+Two approaches to contingency modeling are compared:
 
-| Case | Description |
-| :--- | :--- |
-| **Variable Contingency** | The largest contingency $\Delta P^{L}$ is a decision variable; SCED endogenously determines the binding contingency unit |
-| **Fixed Contingency** | $\Delta P^{L} = \max(\overline{P}) = 600 \text{MW}$ — imposes the worst-case contingency regardless of dispatch |
+| Largest Contingency Treatment | Case | Description |
+| :--- | :--- | :--- |
+| **Variable Contingency** | Case 1 of the paper | The largest contingency $\Delta P^{L}$ is a decision variable; SCED endogenously determines the binding contingency unit |
+| **Fixed Contingency** | Case 2, 3 of the paper | $\Delta P^{L} = \max(\overline{P}) = 600 \text{MW}$ — imposes the worst-case contingency regardless of dispatch |
 
 #### 6b. $\alpha$/$\beta$ Sensitivity Analysis
 
@@ -104,8 +101,10 @@ Under the fixed contingency setting ($\Delta P^{L} = 600 \text{MW}$), the follow
 
 | Case | $\alpha$ | $\beta$ | Description |
 | :--- | :--- | :--- | :--- |
-| **Case 1** | $1.0$ | $0.0$ | Conservative — full headroom reserved for both inertia and PFR services; ramp PFR contributes nothing to footroom relief |
-| **Case 2** | $0.5$ | $0.5$ | Flexible — partial headroom reserved for both inertia and PFR services; ramp PFR partially relieves the footroom requirement |
+| **Case 2 of the paper** | $1.0$ | $0.0$ | Conservative — full headroom reserved for both inertia and PFR services; ramp PFR contributes nothing to footroom relief |
+| **Case 3 of the paper** | $0.5$ | $0.5$ | Flexible — partial headroom reserved for both inertia and PFR services; ramp PFR partially relieves the footroom requirement |
+
+The $\alpha$-$\beta$ dynamic adequacy map in the paper additionally sweeps $\alpha, \beta \in \{0, 0.1, \ldots, 1.0\}$ over the full $11 \times 11$ grid with the same settings.
 
 
 ---
